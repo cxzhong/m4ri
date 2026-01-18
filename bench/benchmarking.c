@@ -52,7 +52,7 @@
  * The last three lines can be suppressed by passing the option -q (quiet).
  */
 
-#include <m4ri/config.h>
+#include <m4ri/m4ri_config.h>
 
 #ifdef HAVE_LIBPAPI
 #define _GNU_SOURCE

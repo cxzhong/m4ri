@@ -2,7 +2,7 @@
 
 #include "benchmarking.h"
 #include "cpucycles.h"
-#include <m4ri/config.h>
+#include <m4ri/m4ri_config.h>
 #include <m4ri/m4ri.h>
 
 struct elim_sparse_params {

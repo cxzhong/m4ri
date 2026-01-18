@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 #include "testing.h"
-#include <m4ri/config.h>
+#include <m4ri/m4ri_config.h>
 #include <m4ri/m4ri.h>
 #include <stdlib.h>
 
