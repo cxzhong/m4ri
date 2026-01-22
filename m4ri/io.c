@@ -70,10 +70,6 @@ void mzd_fprint_row(FILE *stream, mzd_t const *M, const rci_t i) {
 #define PNGSIGSIZE 8
 
 mzd_t *mzd_from_png(const char *fn, int verbose) {
-  int retval = 0;
-  mzd_t *A   = NULL;
-  png_byte pngsig[PNGSIGSIZE];
-
   FILE *fh = fopen(fn, "rb");
 
   if (!fh) {
@@ -81,24 +77,31 @@ mzd_t *mzd_from_png(const char *fn, int verbose) {
     return NULL;
   };
 
+  mzd_t *A = mzd_from_png_fh(fh, verbose);
+
+  fclose(fh);
+  return A;
+}
+
+mzd_t *mzd_from_png_fh(FILE *fh, int verbose) {
+  mzd_t *A = NULL;
+  png_byte pngsig[PNGSIGSIZE];
+
   if (fread((char *)pngsig, PNGSIGSIZE, 1, fh) != 1) {
-    if (verbose) printf("Could not read file '%s'\n", fn);
-    retval = 1;
-    goto from_png_close_fh;
+    if (verbose) printf("Could not read PNG file\n");
+    return NULL;
   }
 
   if (png_sig_cmp(pngsig, 0, PNGSIGSIZE) != 0) {
-    if (verbose) printf("'%s' is not a PNG file.\n", fn);
-    retval = 2;
-    goto from_png_close_fh;
+    if (verbose) printf("Input is not a PNG file.\n");
+    return NULL;
   }
 
   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
   if (!png_ptr) {
     if (verbose) printf("failed to initialise PNG read struct.\n");
-    retval = 3;
-    goto from_png_close_fh;
+    return NULL;
   }
   png_set_user_limits(png_ptr, 0x7fffffffL, 0x7fffffffL);
 
@@ -106,8 +109,8 @@ mzd_t *mzd_from_png(const char *fn, int verbose) {
 
   if (!info_ptr) {
     if (verbose) printf("failed to initialise PNG info struct\n");
-    retval = 3;
-    goto from_png_destroy_read_struct;
+    png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)0);
+    return NULL;
   }
 
   png_init_io(png_ptr, fh);
@@ -124,7 +127,8 @@ mzd_t *mzd_from_png(const char *fn, int verbose) {
 
   if (interlace_type != PNG_INTERLACE_NONE) {
     if (verbose) printf("interlaced images not supported\n");
-    goto from_png_destroy_read_struct;
+    png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)0);
+    return NULL;
   };
 
   if (verbose)
@@ -135,7 +139,8 @@ mzd_t *mzd_from_png(const char *fn, int verbose) {
 
   if (color_type != 0 && color_type != 3) {
     if (verbose) printf("only graycscale and palette colors are supported.\n");
-    goto from_png_destroy_read_struct;
+    png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)0);
+    return NULL;
   }
 
   A                      = mzd_init(m, n);
@@ -175,18 +180,9 @@ mzd_t *mzd_from_png(const char *fn, int verbose) {
   m4ri_mm_free(row);
   png_read_end(png_ptr, NULL);
 
-from_png_destroy_read_struct:
   png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)0);
 
-from_png_close_fh:
-  fclose(fh);
-
-  if (retval != 0 && A) {
-    mzd_free(A);
-    return NULL;
-  } else {
-    return A;
-  }
+  return A;
 }
 
 int mzd_to_png(const mzd_t *A, const char *fn, int compression_level, const char *comment,
@@ -198,11 +194,20 @@ int mzd_to_png(const mzd_t *A, const char *fn, int compression_level, const char
     return 1;
   }
 
+  int r = mzd_to_png_fh(A, fh, compression_level, comment, verbose);
+
+  fclose(fh);
+
+  return r;
+}
+
+int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *comment,
+                  int verbose) {
+
   png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
   if (!png_ptr) {
     if (verbose) printf("failed to initialise PNG write struct.\n");
-    fclose(fh);
     return 3;
   }
   png_set_user_limits(png_ptr, 0x7fffffffL, 0x7fffffffL);
@@ -212,14 +217,12 @@ int mzd_to_png(const mzd_t *A, const char *fn, int compression_level, const char
   if (!info_ptr) {
     if (verbose) printf("failed to initialise PNG info struct\n");
     png_destroy_write_struct(&png_ptr, &info_ptr);
-    fclose(fh);
     return 3;
   }
 
   if (setjmp(png_jmpbuf(png_ptr))) {
     if (verbose) printf("error writing PNG file\n");
     png_destroy_write_struct(&png_ptr, &info_ptr);
-    fclose(fh);
     return 1;
   }
 
@@ -288,7 +291,6 @@ int mzd_to_png(const mzd_t *A, const char *fn, int compression_level, const char
 
   png_write_end(png_ptr, info_ptr);
   png_destroy_write_struct(&png_ptr, &info_ptr);
-  fclose(fh);
   return 0;
 }
 
@@ -300,7 +302,7 @@ mzd_t *mzd_from_jcf(const char *fn, int verbose) {
   FILE *fh   = fopen(fn, "r");
 
   rci_t m, n;
-  int p       = 0;
+  int p           = 0;
   int64_t nonzero = 0;
 
   if (!fh) {
@@ -321,7 +323,8 @@ mzd_t *mzd_from_jcf(const char *fn, int verbose) {
   }
 
   if (verbose)
-    printf("reading %d x %d matrix with at most %" PRId64 " non-zero entries (density at most: %6.5f)\n",
+    printf("reading %d x %d matrix with at most %" PRId64
+           " non-zero entries (density at most: %6.5f)\n",
            m, n, nonzero, ((double)nonzero) / ((double)m * n));
 
   A = mzd_init(m, n);

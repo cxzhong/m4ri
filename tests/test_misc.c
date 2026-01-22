@@ -57,7 +57,15 @@ int test_png(rci_t m, rci_t n) {
 
   ret += mzd_cmp(A, B);
 
+  FILE *fh = tmpfile();
+  mzd_to_png_fh(A, fh, 9, NULL, 0);
+  rewind(fh);
+  mzd_t *C = mzd_from_png_fh(fh, 0);
+
+  ret += mzd_cmp(A, C);
+
   remove(fn);
+  mzd_free(C);
   mzd_free(B);
   mzd_free(A);
 

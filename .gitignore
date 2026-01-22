@@ -61,3 +61,4 @@ test_alignment
 /.cache/
 /scratch.c
 /configure~
+/tests/test_pluq

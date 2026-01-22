@@ -91,7 +91,7 @@ void mzd_info(const mzd_t *A, int do_rank);
 #if __M4RI_HAVE_LIBPNG
 
 /**
- * \brief Read matrix from 1-bit PNG image.
+ * \brief Read matrix from a 1-bit PNG image.
  *
  * This function returns a matrix on success and NULL otherwise. 1-bit
  * Grayscale and 1-bit Palette images are supported.
@@ -103,7 +103,19 @@ void mzd_info(const mzd_t *A, int do_rank);
 mzd_t *mzd_from_png(const char *fn, int verbose);
 
 /**
- * \brief Write matrix to 1-bit PNG image.
+ * \brief Read matrix from a 1-bit PNG image.
+ *
+ * This function returns a matrix on success and NULL otherwise. 1-bit
+ * Grayscale and 1-bit Palette images are supported.
+ *
+ * \param fh a file handle
+ * \param verbose Print error message to stdout if != 0
+ */
+
+mzd_t *mzd_from_png_fh(FILE *fh, int verbose);
+
+/**
+ * \brief Write matrix to a 1-bit PNG image.
  *
  * This function returns zero on success and some value != 0
  * otherwise. The parameter compression_level takes a zlib compression
@@ -128,6 +140,21 @@ mzd_t *mzd_from_png(const char *fn, int verbose);
 
 int mzd_to_png(const mzd_t *A, const char *fn, int compression_level, const char *comment,
                int verbose);
+
+/**
+ * \brief Write matrix to a 1-bit PNG image.
+ *
+ * See mzd_to_png for details.
+ *
+ * \param A Matrix
+ * \param fh a file handle (must have write permission)
+ * \param compression_level Zlib compression level (see above)
+ * \param comment Optional comment (may be NULL)
+ * \param verbose Print error message to stdout if != 0
+ */
+
+int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *comment,
+                  int verbose);
 
 #endif  //__M4RI_HAVE_LIBPNG
 
