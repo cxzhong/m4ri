@@ -8,7 +8,7 @@ AC_CANONICAL_HOST
 
 AC_CONFIG_SRCDIR(m4ri/brilliantrussian.c)
 
-AM_INIT_AUTOMAKE([nostdinc])
+AM_INIT_AUTOMAKE([nostdinc foreign])
 
 dnl Include maintainer mode targets.
 AM_MAINTAINER_MODE
