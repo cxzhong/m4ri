@@ -234,11 +234,14 @@ int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *c
 
   png_text txt_ptr[3];
 
-  char pdate[21];
+  char pdate[20];
   time_t ptime     = time(NULL);
   struct tm *ltime = localtime(&ptime);
-  snprintf(pdate, sizeof(pdate), "%04d/%02d/%02d %02d:%02d:%02d", ltime->tm_year + 1900, ltime->tm_mon + 1,
-          ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+  if (ltime != NULL) {
+    strftime(pdate, sizeof(pdate), "%Y/%m/%d %H:%M:%S", ltime);
+  } else {
+    pdate[0] = '\0';
+  }
 
   txt_ptr[0].key         = "Software";
   txt_ptr[0].text        = "M4RI";
