@@ -28,9 +28,16 @@
 #if __M4RI_ENABLE_MMC
 /**
  * The actual memory block cache.
+ * When OpenMP is enabled, each thread gets its own cache to avoid contention.
  */
 
-mmb_t m4ri_mmc_cache[__M4RI_MMC_NBLOCKS];
+#if __M4RI_HAVE_OPENMP
+static _Thread_local mmb_t m4ri_mmc_cache[__M4RI_MMC_NBLOCKS];
+static _Thread_local int m4ri_mmc_cache_j = 0;
+#else
+static mmb_t m4ri_mmc_cache[__M4RI_MMC_NBLOCKS];
+static int m4ri_mmc_cache_j = 0;
+#endif
 #endif  // __M4RI_ENABLE_MMC
 
 /**
@@ -46,24 +53,18 @@ void *m4ri_mmc_malloc(size_t size) {
 #if __M4RI_ENABLE_MMC
   void *ret = NULL;
 
-#if __M4RI_HAVE_OPENMP
-#pragma omp critical(mmc)
-  {
-#endif
-    mmb_t *mm = m4ri_mmc_cache;
-    if (size <= __M4RI_MMC_THRESHOLD) {
-      for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
-        if (mm[i].size == size) {
-          ret        = mm[i].data;
-          mm[i].data = NULL;
-          mm[i].size = 0;
-          break;
-        }
+  mmb_t *mm = m4ri_mmc_cache;
+  if (size <= __M4RI_MMC_THRESHOLD) {
+    for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
+      if (mm[i].size == size) {
+        ret        = mm[i].data;
+        mm[i].data = NULL;
+        mm[i].size = 0;
+        break;
       }
     }
-#if __M4RI_HAVE_OPENMP
   }
-#endif
+
   if (ret)
     return ret;
   else
@@ -85,31 +86,24 @@ void *m4ri_mmc_malloc(size_t size) {
 void m4ri_mmc_free(void *condemned, size_t size) {
 #if __M4RI_ENABLE_MMC
 
-#if __M4RI_HAVE_OPENMP
-#pragma omp critical(mmc)
-  {
-#endif
-    static int j = 0;
-    mmb_t *mm    = m4ri_mmc_cache;
-    if (size < __M4RI_MMC_THRESHOLD) {
-      for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
-        if (mm[i].size == 0) {
-          mm[i].size = size;
-          mm[i].data = condemned;
-          goto done;
-        }
+  mmb_t *mm = m4ri_mmc_cache;
+  if (size < __M4RI_MMC_THRESHOLD) {
+    for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
+      if (mm[i].size == 0) {
+        if (mm[i].data) m4ri_mm_free(mm[i].data);
+        mm[i].size = size;
+        mm[i].data = condemned;
+        return;
       }
-      m4ri_mm_free(mm[j].data);
-      mm[j].size = size;
-      mm[j].data = condemned;
-      j          = (j + 1) % __M4RI_MMC_NBLOCKS;
-    } else {
-      m4ri_mm_free(condemned);
     }
-  done:;
-#if __M4RI_HAVE_OPENMP
+    m4ri_mm_free(mm[m4ri_mmc_cache_j].data);
+    mm[m4ri_mmc_cache_j].size = size;
+    mm[m4ri_mmc_cache_j].data = condemned;
+    m4ri_mmc_cache_j          = (m4ri_mmc_cache_j + 1) % __M4RI_MMC_NBLOCKS;
+  } else {
+    m4ri_mm_free(condemned);
   }
-#endif  // __M4RI_HAVE_OPENMP
+
 #else   // __M4RI_ENABLE_MMC
   m4ri_mm_free(condemned);
 #endif  // __M4RI_ENABLE_MMC
@@ -120,23 +114,17 @@ void m4ri_mmc_free(void *condemned, size_t size) {
 
  *
  * This function is called automatically when the shared library is unloaded.
- *
- * \warning Not thread safe.
+ * With OpenMP, each thread must call this to clean its own thread-local cache,
+ * or it is called from a parallel region to clean all thread caches.
  */
 void m4ri_mmc_cleanup(void) {
 #if __M4RI_ENABLE_MMC
 
-#if __M4RI_HAVE_OPENMP
-#pragma omp critical(mmc)
-  {
-#endif
-    mmb_t *mm = m4ri_mmc_cache;
-    for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
-      if (mm[i].size) m4ri_mm_free(mm[i].data);
-      mm[i].size = 0;
-    }
-#if __M4RI_HAVE_OPENMP
+  mmb_t *mm = m4ri_mmc_cache;
+  for (int i = 0; i < __M4RI_MMC_NBLOCKS; ++i) {
+    if (mm[i].size) m4ri_mm_free(mm[i].data);
+    mm[i].size = 0;
   }
-#endif  // __M4RI_HAVE_OPENMP
+
 #endif  // __M4RI_ENABLE_MMC
 }
