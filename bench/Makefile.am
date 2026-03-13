@@ -15,7 +15,8 @@ DEFINES =
 AM_CFLAGS = -I$(TOPSRCDIR) -I$(TOPBUILDDIR) -D_XOPEN_SOURCE=600 @CFLAGS@ $(DEFINES) @OPENMP_CFLAGS@ @PAPI_CFLAGS@ @LIBPNG_CFLAGS@
 
 STAGEDIR := $(realpath -s $(TOPBUILDDIR)/.libs)
-AM_LDFLAGS = -L$(STAGEDIR) -Wl,-rpath,$(STAGEDIR) cpucycles.o -lm4ri -lm @PAPI_LDFLAGS@ @PAPI_LIBS@
+AM_LDFLAGS = -L$(STAGEDIR) -Wl,-rpath,$(STAGEDIR) @PAPI_LDFLAGS@
+LDADD = libcpucycles.a -lm4ri -lm -lrt @PAPI_LIBS@
 LDFLAGS = -no-install
 
 BENCH = bench_elimination \
@@ -28,12 +29,9 @@ BENCH = bench_elimination \
 	bench_invert \
 	bench_rank
 
-CPUCYCLES_DIR = cpucycles-20060326
+CPUCYCLES_DIR = libcpucycles-20260105
 
-CPUCYCLES_EXTRA_DIST = $(srcdir)/cpucycles-20060326/*.c \
-                       $(srcdir)/cpucycles-20060326/*.h \
-                       $(srcdir)/cpucycles-20060326/compile \
-                       $(srcdir)/cpucycles-20060326/do 
+CPUCYCLES_EXTRA_DIST = $(srcdir)/$(CPUCYCLES_DIR)
 
 EXTRA_DIST = $(CPUCYCLES_EXTRA_DIST)
 
@@ -49,23 +47,25 @@ bench_mzd_SOURCES = bench_mzd.c benchmarking.c benchmarking.h
 bench_invert_SOURCES = bench_invert.c benchmarking.c benchmarking.h
 bench_rank_SOURCES = bench_rank.c benchmarking.c benchmarking.h
 
-BUILT_SOURCES = cpucycles.h
+BUILT_SOURCES = cpucycles.h libcpucycles.a
 
-cpucycles.h: cpucycles.o
+cpucycles.h: libcpucycles.a
 
-cpucycles.o:
+libcpucycles.a:
 	 (if [ $(srcdir) != $(builddir) ]; then \
 		cp -r $(srcdir)/$(CPUCYCLES_DIR) $(builddir); \
 	        chmod +w -R $(CPUCYCLES_DIR)/; \
          fi; \
          cd $(CPUCYCLES_DIR); \
-         sh do; \
-         cp cpucycles.o ..; \
-         cp cpucycles.h ..; \
+		 ./configure; \
+	 $(MAKE); \
+	 cp build/0/package/lib/libcpucycles.a ..; \
+	 cp build/0/package/include/cpucycles.h ..; \
          cd ..; \
 	 if [ $(srcdir) != $(builddir) ]; then \
 		rm -r $(CPUCYCLES_DIR); \
          fi)
 
 distclean-local:
-	-rm -f cpucycles.h
+	-rm -f cpucycles.h libcpucycles.a
+	-rm -rf $(CPUCYCLES_DIR)/build
