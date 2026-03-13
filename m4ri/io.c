@@ -234,10 +234,10 @@ int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *c
 
   png_text txt_ptr[3];
 
-  char pdate[21];
+  char pdate[72];
   time_t ptime     = time(NULL);
   struct tm *ltime = localtime(&ptime);
-  sprintf(pdate, "%04d/%02d/%02d %02d:%02d:%02d", ltime->tm_year + 1900, ltime->tm_mon + 1,
+  snprintf(pdate, sizeof(pdate), "%04d/%02d/%02d %02d:%02d:%02d", ltime->tm_year + 1900, ltime->tm_mon + 1,
           ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 
   txt_ptr[0].key         = "Software";

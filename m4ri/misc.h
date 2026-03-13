@@ -44,12 +44,10 @@
 #endif
 
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-/// @cond INTERNAL
-#define __STDC_LIMIT_MACROS
-/// @endcond
-#include <stdint.h>
 
 /*
  * These define entirely the word width used in the library.
@@ -61,7 +59,7 @@
  * The value of a BIT is either 0 or 1.
  */
 
-typedef int BIT;
+typedef bool BIT;
 
 /**
  * \brief Type of row and column indexes.
@@ -179,7 +177,7 @@ static word const m4ri_ffff = __M4RI_CONVERT_TO_WORD(-1);
  */
 
 #ifndef TRUE
-#define TRUE 1
+#define TRUE true
 #endif
 
 /**
@@ -187,7 +185,7 @@ static word const m4ri_ffff = __M4RI_CONVERT_TO_WORD(-1);
  */
 
 #ifndef FALSE
-#define FALSE 0
+#define FALSE false
 #endif
 
 /**
@@ -430,11 +428,11 @@ static inline word m4ri_spread_bits(word const from, rci_t *const Q, int const l
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 #define __M4RI_GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
-#define __M4RI_GNUC_PREREQ(maj, min) FALSE
+#define __M4RI_GNUC_PREREQ(maj, min) false
 #endif
 
-/* __builtin_expect is in gcc 3.0, and not in 2.95. */
-#if __M4RI_GNUC_PREREQ(3, 0) || defined(M4RI_DOXYGEN)
+/* Branch prediction hints - supported by GCC and Clang */
+#if defined(__GNUC__) || defined(__clang__) || defined(M4RI_DOXYGEN)
 
 /**
  * \brief Macro to help with branch prediction.
@@ -535,7 +533,7 @@ word m4ri_random_word();
  * library is loaded, but it doesn't harm if it is called twice.
  */
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 void __attribute__((constructor)) m4ri_init(void);
 #else
 void m4ri_init(void);
@@ -552,7 +550,7 @@ void m4ri_init(void);
  * library is unloaded, but it doesn't harm if it is called twice.
  */
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 void __attribute__((destructor)) m4ri_fini(void);
 #else
 void m4ri_fini(void);
@@ -714,15 +712,7 @@ static inline void m4ri_mm_free(void *condemned, ...) {
 
 /// @cond INTERNAL
 
-/*
- * MSVC does not understand the restrict keyword
- */
-
-#if defined(__GNUC__)
-#define RESTRICT __restrict__
-#else
-#define RESTRICT
-#endif
+#define RESTRICT restrict
 
 /*
  * Macros for template expansion.

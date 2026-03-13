@@ -265,7 +265,7 @@ void _mzd_trsm_upper_right_base(mzd_t const *U, mzd_t *B) {
 
   for (rci_t i = 1; i < nb; ++i) {
     /* Computes X_i = B_i + X_{0..i-1} U_{0..i-1,i} */
-    register word ucol = 0;
+    word ucol = 0;
     for (rci_t k = 0; k < i; ++k) {
       if (__M4RI_GET_BIT(mzd_row_const(U, k)[0], i)) __M4RI_SET_BIT(ucol, k);
     }
@@ -364,7 +364,7 @@ void _mzd_trsm_lower_right_base(mzd_t const *L, mzd_t *B) {
 
   for (rci_t i = nb - 1; i >= 0; --i) {
     /* Computes X_i = B_i + X_{i+1,n} L_{i+1..n,i} */
-    register word ucol = 0;
+    word ucol = 0;
     for (rci_t k = i + 1; k < nb; ++k) {
       if (__M4RI_GET_BIT(mzd_row_const(L, k)[0], i)) __M4RI_SET_BIT(ucol, k);
     }

@@ -37,18 +37,16 @@
  * \brief Cache of mzd_t containers
  */
 
+#include <stdalign.h>
+
 typedef struct mzd_t_cache {
-  mzd_t mzd[64];            /*!< cached matrices */
-  struct mzd_t_cache *prev; /*!< previous block */
-  struct mzd_t_cache *next; /*!< next block */
-  uint64_t used;            /*!< bitmasks which matrices in this block are used */
+  alignas(64) mzd_t mzd[64]; /*!< cached matrices */
+  struct mzd_t_cache *prev;  /*!< previous block */
+  struct mzd_t_cache *next;  /*!< next block */
+  uint64_t used;             /*!< bitmasks which matrices in this block are used */
   unsigned char padding[sizeof(mzd_t) - 2 * sizeof(struct mzd_t_cache *) -
                         sizeof(uint64_t)]; /*!< alignment */
-#ifdef __GNUC__
-} mzd_t_cache_t __attribute__((__aligned__(64)));
-#else
 } mzd_t_cache_t;
-#endif
 
 #define __M4RI_MZD_T_CACHE_MAX 16
 static mzd_t_cache_t mzd_cache;

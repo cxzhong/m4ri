@@ -70,7 +70,7 @@ word m4ri_random_word() {
 #endif
 }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 void __attribute__((constructor)) m4ri_init()
 #else
 void m4ri_init()
@@ -78,7 +78,7 @@ void m4ri_init()
 {
   m4ri_build_all_codes();
 }
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 void __attribute__((destructor)) m4ri_fini()
 #else
 void m4ri_fini()

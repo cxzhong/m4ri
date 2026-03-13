@@ -26,9 +26,6 @@ AC_PROG_INSTALL
 AC_CONFIG_HEADERS(m4ri/config.h)
 
 AC_PROG_CC
-if test "$ac_cv_prog_cc_c99" = "no"; then
-  AC_MSG_ERROR([C99 support is required but not found.])
-fi
 
 # Find and set LIBM on the platform.
 LT_LIB_M

@@ -105,7 +105,7 @@ static inline void mzd_write_col_to_rows_blockd(mzd_t *A, mzd_t const *B, rci_t 
     for (rci_t r = start_row; r < stop_row; ++r) {
       word const *Brow    = mzd_row_const(B, r - start_row);
       word *Arow          = mzd_row(A, r);
-      register word value = 0;
+      word value = 0;
 
       /* we gather the bits in a register word */
       switch (todo - 1) {
