@@ -234,7 +234,7 @@ int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *c
 
   png_text txt_ptr[3];
 
-  char pdate[72];
+  char pdate[21];
   time_t ptime     = time(NULL);
   struct tm *ltime = localtime(&ptime);
   snprintf(pdate, sizeof(pdate), "%04d/%02d/%02d %02d:%02d:%02d", ltime->tm_year + 1900, ltime->tm_mon + 1,
