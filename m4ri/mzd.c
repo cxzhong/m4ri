@@ -37,7 +37,11 @@
  * \brief Cache of mzd_t containers
  */
 
+#if defined(__GNUC__) || defined(__clang__)
 typedef struct __attribute__((aligned(64))) mzd_t_cache {
+#else
+typedef struct mzd_t_cache {
+#endif
   mzd_t mzd[64];            /*!< cached matrices */
   struct mzd_t_cache *prev;  /*!< previous block */
   struct mzd_t_cache *next;  /*!< next block */
