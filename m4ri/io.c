@@ -24,6 +24,7 @@
 
 #include "m4ri_config.h"
 #include <inttypes.h>
+#include <time.h>
 
 #if __M4RI_HAVE_LIBPNG
 #include <png.h>
@@ -33,7 +34,7 @@
 #include "io.h"
 
 void mzd_info(const mzd_t *A, int do_rank) {
-  printf("nrows: %6d, ncols: %6d, density: %6.5f, hash: 0x%016zx", A->nrows, A->ncols,
+  printf("nrows: %6d, ncols: %6d, density: %6.5f, hash: 0x%016" PRIx64, A->nrows, A->ncols,
          mzd_density(A, 1), mzd_hash(A));
   if (do_rank) {
     mzd_t *AA = mzd_copy(NULL, A);
@@ -235,10 +236,15 @@ int mzd_to_png_fh(const mzd_t *A, FILE *fh, int compression_level, const char *c
   png_text txt_ptr[3];
 
   char pdate[21];
-  time_t ptime     = time(NULL);
-  struct tm *ltime = localtime(&ptime);
-  sprintf(pdate, "%04d/%02d/%02d %02d:%02d:%02d", ltime->tm_year + 1900, ltime->tm_mon + 1,
-          ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+  time_t ptime = time(NULL);
+  struct tm ltime;
+#if defined(_WIN32) && defined(_MSC_VER)
+    localtime_s(&ltime, &ptime);
+#else
+    localtime_r(&ptime, &ltime);
+#endif
+  if (strftime(pdate, sizeof(pdate), "%Y/%m/%d %H:%M:%S", &ltime) == 0)
+    pdate[0] = '\0';
 
   txt_ptr[0].key         = "Software";
   txt_ptr[0].text        = "M4RI";
